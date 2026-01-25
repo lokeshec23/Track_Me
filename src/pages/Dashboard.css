@@ -1,0 +1,202 @@
+.dashboard {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.dashboard-header {
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+.dashboard-header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-lg) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.dashboard-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.dashboard-logo-icon {
+    font-size: 2rem;
+}
+
+.dashboard-logo-text {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--accent-500) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.dashboard-header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.dashboard-user {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.dashboard-user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.dashboard-main {
+    padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-welcome {
+    margin-bottom: var(--spacing-xl);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.dashboard-welcome-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.dashboard-welcome-subtitle {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.dashboard-filters {
+    margin-bottom: var(--spacing-xl);
+}
+
+.category-filter {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.category-filter-label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.category-filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.dashboard-expenses {
+    animation: fadeIn 0.5s ease-out 0.2s both;
+}
+
+.dashboard-expenses-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+}
+
+.dashboard-expenses-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Floating Action Button (Mobile) */
+.dashboard-fab {
+    position: fixed;
+    bottom: var(--spacing-xl);
+    right: var(--spacing-xl);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-500) 0%, var(--accent-500) 100%);
+    color: white;
+    border: none;
+    font-size: 2rem;
+    font-weight: 300;
+    cursor: pointer;
+    box-shadow: var(--shadow-xl);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: all var(--transition-base);
+}
+
+.dashboard-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.5);
+}
+
+.dashboard-fab:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .dashboard-header-content {
+        flex-wrap: wrap;
+    }
+
+    .dashboard-user-name {
+        display: none;
+    }
+
+    .dashboard-logo-text {
+        font-size: var(--font-size-lg);
+    }
+
+    .dashboard-welcome-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .dashboard-expenses-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+    }
+
+    .dashboard-expenses-header>button {
+        display: none;
+    }
+
+    .dashboard-fab {
+        display: flex;
+    }
+
+    .category-filter-buttons {
+        flex-direction: column;
+    }
+
+    .theme-toggle span:not(.btn-icon) {
+        display: none;
+    }
+}
