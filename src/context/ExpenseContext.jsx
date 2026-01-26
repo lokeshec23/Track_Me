@@ -1,16 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 import {
-    getExpenses,
-    createExpense,
-    updateExpense,
-    deleteExpense,
     getCategories,
     createCategory,
     deleteCategory,
-    getIncome,
-    createIncome,
-    updateIncome,
-    deleteIncome,
     getIncomeCategories,
     createIncomeCategory,
     deleteIncomeCategory,
@@ -45,20 +38,22 @@ export const ExpenseProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        // Load expenses and income when user changes
         if (user) {
-            loadExpenses();
-            loadIncome();
+            fetchTransactions();
         } else {
             setExpenses([]);
             setIncome([]);
         }
     }, [user]);
 
-    const loadExpenses = () => {
-        if (user) {
-            const userExpenses = getExpenses(user.id);
-            setExpenses(userExpenses);
+    const fetchTransactions = async () => {
+        try {
+            const res = await api.get('/transactions/');
+            const allTxns = res.data;
+            setExpenses(allTxns.filter(t => t.type === 'expense'));
+            setIncome(allTxns.filter(t => t.type === 'income'));
+        } catch (err) {
+            console.error("Failed to fetch transactions", err);
         }
     };
 
@@ -67,39 +62,38 @@ export const ExpenseProvider = ({ children }) => {
         setCategories(cats);
     };
 
-    const loadIncome = () => {
-        if (user) {
-            const userIncome = getIncome(user.id);
-            setIncome(userIncome);
-        }
-    };
-
     const loadIncomeCategories = () => {
         const cats = getIncomeCategories();
         setIncomeCategories(cats);
     };
 
-    const addExpense = (expenseData) => {
+    const addExpense = async (expenseData) => {
         if (!user) return;
-
-        const newExpense = createExpense({
-            ...expenseData,
-            userId: user.id
-        });
-
-        setExpenses(prev => [newExpense, ...prev]);
-        return newExpense;
+        try {
+            const res = await api.post('/transactions/', { ...expenseData, type: 'expense' });
+            const newExpense = res.data;
+            setExpenses(prev => [newExpense, ...prev]);
+            return newExpense;
+        } catch (err) { console.error(err); throw err; }
     };
 
-    const editExpense = (expenseId, updates) => {
-        const updated = updateExpense(expenseId, updates);
-        setExpenses(prev => prev.map(e => e.id === expenseId ? updated : e));
-        return updated;
+    const editExpense = async (expenseId, updates) => {
+        try {
+            const existing = expenses.find(e => e.id === expenseId);
+            if (!existing) return;
+            const payload = { ...existing, ...updates, type: 'expense' };
+            const res = await api.put(`/transactions/${expenseId}`, payload);
+            const updated = res.data;
+            setExpenses(prev => prev.map(e => e.id === expenseId ? updated : e));
+            return updated;
+        } catch (err) { console.error(err); throw err; }
     };
 
-    const removeExpense = (expenseId) => {
-        deleteExpense(expenseId);
-        setExpenses(prev => prev.filter(e => e.id !== expenseId));
+    const removeExpense = async (expenseId) => {
+        try {
+            await api.delete(`/transactions/${expenseId}`);
+            setExpenses(prev => prev.filter(e => e.id !== expenseId));
+        } catch (err) { console.error(err); throw err; }
     };
 
     const addCategory = (categoryData) => {
@@ -113,28 +107,33 @@ export const ExpenseProvider = ({ children }) => {
         setCategories(prev => prev.filter(c => c.id !== categoryId));
     };
 
-    // Income Management
-    const addIncome = (incomeData) => {
+    const addIncome = async (incomeData) => {
         if (!user) return;
-
-        const newIncome = createIncome({
-            ...incomeData,
-            userId: user.id
-        });
-
-        setIncome(prev => [newIncome, ...prev]);
-        return newIncome;
+        try {
+            const res = await api.post('/transactions/', { ...incomeData, type: 'income' });
+            const newIncome = res.data;
+            setIncome(prev => [newIncome, ...prev]);
+            return newIncome;
+        } catch (err) { console.error(err); throw err; }
     };
 
-    const editIncome = (incomeId, updates) => {
-        const updated = updateIncome(incomeId, updates);
-        setIncome(prev => prev.map(i => i.id === incomeId ? updated : i));
-        return updated;
+    const editIncome = async (incomeId, updates) => {
+        try {
+            const existing = income.find(i => i.id === incomeId);
+            if (!existing) return;
+            const payload = { ...existing, ...updates, type: 'income' };
+            const res = await api.put(`/transactions/${incomeId}`, payload);
+            const updated = res.data;
+            setIncome(prev => prev.map(i => i.id === incomeId ? updated : i));
+            return updated;
+        } catch (err) { console.error(err); throw err; }
     };
 
-    const removeIncome = (incomeId) => {
-        deleteIncome(incomeId);
-        setIncome(prev => prev.filter(i => i.id !== incomeId));
+    const removeIncome = async (incomeId) => {
+        try {
+            await api.delete(`/transactions/${incomeId}`);
+            setIncome(prev => prev.filter(i => i.id !== incomeId));
+        } catch (err) { console.error(err); throw err; }
     };
 
     const addIncomeCategory = (categoryData) => {
@@ -148,11 +147,8 @@ export const ExpenseProvider = ({ children }) => {
         setIncomeCategories(prev => prev.filter(c => c.id !== categoryId));
     };
 
-    // Filter expenses based on date range and category
     const getFilteredExpenses = () => {
         let filtered = [...expenses];
-
-        // Filter by date range
         if (dateRange.start && dateRange.end) {
             filtered = filtered.filter(expense => {
                 const expenseDate = new Date(expense.date);
@@ -161,26 +157,20 @@ export const ExpenseProvider = ({ children }) => {
                 return expenseDate >= start && expenseDate <= end;
             });
         }
-
-        // Filter by category
         if (selectedCategory) {
             filtered = filtered.filter(expense => expense.categoryId === selectedCategory);
         }
-
         return filtered;
     };
 
-    // Calculate total expenses
     const getTotalExpenses = (expenseList = null) => {
         const list = expenseList || getFilteredExpenses();
         return list.reduce((total, expense) => total + parseFloat(expense.amount), 0);
     };
 
-    // Get expenses by category
     const getExpensesByCategory = () => {
         const filtered = getFilteredExpenses();
         const byCategory = {};
-
         filtered.forEach(expense => {
             if (!byCategory[expense.categoryId]) {
                 byCategory[expense.categoryId] = {
@@ -193,15 +183,11 @@ export const ExpenseProvider = ({ children }) => {
             byCategory[expense.categoryId].count += 1;
             byCategory[expense.categoryId].expenses.push(expense);
         });
-
         return byCategory;
     };
 
-    // Filter income based on date range
     const getFilteredIncome = () => {
         let filtered = [...income];
-
-        // Filter by date range
         if (dateRange.start && dateRange.end) {
             filtered = filtered.filter(inc => {
                 const incomeDate = new Date(inc.date);
@@ -210,28 +196,23 @@ export const ExpenseProvider = ({ children }) => {
                 return incomeDate >= start && incomeDate <= end;
             });
         }
-
         return filtered;
     };
 
-    // Calculate total income
     const getTotalIncome = (incomeList = null) => {
         const list = incomeList || getFilteredIncome();
         return list.reduce((total, inc) => total + parseFloat(inc.amount), 0);
     };
 
-    // Calculate net savings (income - expenses)
     const getNetSavings = () => {
         const totalIncome = getTotalIncome();
         const totalExpenses = getTotalExpenses();
         return totalIncome - totalExpenses;
     };
 
-    // Get income by category
     const getIncomeByCategory = () => {
         const filtered = getFilteredIncome();
         const byCategory = {};
-
         filtered.forEach(inc => {
             if (!byCategory[inc.categoryId]) {
                 byCategory[inc.categoryId] = {
@@ -244,7 +225,6 @@ export const ExpenseProvider = ({ children }) => {
             byCategory[inc.categoryId].count += 1;
             byCategory[inc.categoryId].income.push(inc);
         });
-
         return byCategory;
     };
 
