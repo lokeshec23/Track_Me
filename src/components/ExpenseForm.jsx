@@ -10,7 +10,8 @@ const ExpenseForm = ({ expense = null, onClose, onSuccess }) => {
     amount: expense?.amount || '',
     categoryId: expense?.categoryId || '',
     date: expense?.date || new Date().toISOString().split('T')[0],
-    description: expense?.description || ''
+    description: expense?.description || '',
+    paymentMode: expense?.paymentMode || 'UPI'
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -27,17 +28,21 @@ const ExpenseForm = ({ expense = null, onClose, onSuccess }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       newErrors.amount = 'Please enter a valid amount';
     }
-    
+
     if (!formData.categoryId) {
       newErrors.categoryId = 'Please select a category';
     }
-    
+
     if (!formData.date) {
       newErrors.date = 'Please select a date';
+    }
+
+    if (!formData.paymentMode) {
+      newErrors.paymentMode = 'Please select a payment mode';
     }
 
     return newErrors;
@@ -57,7 +62,7 @@ const ExpenseForm = ({ expense = null, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -72,7 +77,7 @@ const ExpenseForm = ({ expense = null, onClose, onSuccess }) => {
       } else {
         addExpense(formData);
       }
-      
+
       if (onSuccess) onSuccess();
       if (onClose) onClose();
     } catch (error) {
@@ -123,7 +128,7 @@ const ExpenseForm = ({ expense = null, onClose, onSuccess }) => {
           ))}
         </select>
         {errors.categoryId && <span className="input-error-message">{errors.categoryId}</span>}
-        
+
         <Button
           type="button"
           variant="ghost"
@@ -184,6 +189,25 @@ const ExpenseForm = ({ expense = null, onClose, onSuccess }) => {
         icon="📅"
         required
       />
+
+      <div className="input-wrapper">
+        <label className="input-label">
+          Mode of Payment<span className="input-required">*</span>
+        </label>
+        <select
+          name="paymentMode"
+          value={formData.paymentMode}
+          onChange={handleChange}
+          className={`input-field ${errors.paymentMode ? 'input-error' : ''}`}
+          required
+        >
+          <option value="UPI">UPI</option>
+          <option value="Cash">Cash</option>
+          <option value="Debit Card">Debit Card</option>
+          <option value="Credit Card">Credit Card</option>
+        </select>
+        {errors.paymentMode && <span className="input-error-message">{errors.paymentMode}</span>}
+      </div>
 
       <div className="input-wrapper">
         <label htmlFor="description" className="input-label">
