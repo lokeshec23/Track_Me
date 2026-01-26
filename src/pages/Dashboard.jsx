@@ -129,36 +129,28 @@ const Dashboard = () => {
                     <div className="dashboard-filters">
                         <DateRangePicker />
 
-                        {/* Category Filter */}
-                        <div className="category-filter">
-                            <label className="category-filter-label">Filter by Category</label>
-                            <div className="category-filter-buttons">
-                                <Button
-                                    variant={selectedCategory === null ? 'primary' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setSelectedCategory(null)}
-                                >
-                                    All
-                                </Button>
-                                {categories.map(cat => (
-                                    <Button
-                                        key={cat.id}
-                                        variant={selectedCategory === cat.id ? 'primary' : 'ghost'}
-                                        size="sm"
-                                        onClick={() => setSelectedCategory(cat.id)}
-                                        icon={cat.icon}
-                                    >
-                                        {cat.name}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
+
                     </div>
 
                     {/* Expense List Section */}
                     <div className="dashboard-expenses">
                         <div className="dashboard-expenses-header">
-                            <h3 className="dashboard-expenses-title">Recent Transactions</h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+                                <h3 className="dashboard-expenses-title">Recent Transactions</h3>
+                                <select
+                                    className="category-select"
+                                    style={{ width: 'auto', minWidth: '150px', padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: 'var(--font-size-sm)' }}
+                                    value={selectedCategory || ''}
+                                    onChange={(e) => setSelectedCategory(e.target.value || null)}
+                                >
+                                    <option value="">All Categories</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.icon} {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                             <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                                 <Button
                                     variant="secondary"
