@@ -1,7 +1,10 @@
 import React, { useMemo } from 'react';
 import { useExpense } from '../context/ExpenseContext';
 import { useBudget } from '../context/BudgetContext';
+import { useGoals } from '../context/GoalsContext';
 import Card from '../components/Card';
+import Button from '../components/Button';
+import { exportToCSV, generatePDFReport, exportBudgetReportCSV, exportGoalsReportCSV } from '../utils/exportUtils';
 import './Analytics.css';
 import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -11,6 +14,7 @@ import {
 const Analytics = () => {
     const { expenses, income, categories, incomeCategories, getTotalExpenses, getTotalIncome } = useExpense();
     const { budgets, getAllUtilizations } = useBudget();
+    const { goals } = useGoals();
 
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('en-IN', {
@@ -94,6 +98,38 @@ const Analytics = () => {
     const netSavings = totalIncome - totalExpenses;
     const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
 
+    // Export handlers
+    const handleExportTransactions = () => {
+        const allTransactions = [
+            ...expenses.map(e => ({ ...e, type: 'expense', categoryName: categories.find(c => c.id === e.categoryId)?.name })),
+            ...income.map(i => ({ ...i, type: 'income', categoryName: incomeCategories.find(c => c.id === i.categoryId)?.name }))
+        ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        exportToCSV(allTransactions, 'transactions.csv');
+    };
+
+    const handleExportPDFReport = () => {
+        const utilizations = getAllUtilizations();
+        const reportData = {
+            title: 'Financial Report',
+            period: 'Current Period',
+            totalIncome,
+            totalExpenses,
+            netSavings,
+            transactions: [...expenses.map(e => ({ ...e, type: 'expense', categoryName: categories.find(c => c.id === e.categoryId)?.name })),
+            ...income.map(i => ({ ...i, type: 'income', categoryName: incomeCategories.find(c => c.id === i.categoryId)?.name }))],
+            budgets: utilizations.map(({ budget, utilization }) => ({
+                categoryName: categories.find(c => c.id === budget.categoryId)?.name || 'Overall',
+                amount: budget.amount,
+                spent: utilization.spent,
+                remaining: utilization.remaining,
+                percentage: utilization.percentage
+            })),
+            goals: goals.map(g => ({ ...g }))
+        };
+        generatePDFReport(reportData, 'financial-report.pdf');
+    };
+
     if (expenses.length === 0 && income.length === 0) {
         return (
             <div className="analytics-page">
@@ -118,8 +154,20 @@ const Analytics = () => {
         <div className="analytics-page">
             <div className="analytics-container">
                 <div className="analytics-header">
-                    <h1 className="analytics-title">Analytics</h1>
-                    <p className="analytics-subtitle">Visual insights into your finances</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-md)' }}>
+                        <div>
+                            <h1 className="analytics-title">Analytics</h1>
+                            <p className="analytics-subtitle">Visual insights into your finances</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                            <Button variant="secondary" size="sm" onClick={handleExportTransactions} icon="📄">
+                                Export CSV
+                            </Button>
+                            <Button variant="primary" size="sm" onClick={handleExportPDFReport} icon="📑">
+                                Export PDF
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Summary Stats */}
