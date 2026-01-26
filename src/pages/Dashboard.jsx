@@ -11,6 +11,7 @@ import ExpenseList from '../components/ExpenseList';
 import SummaryCards from '../components/SummaryCards';
 import DateRangePicker from '../components/DateRangePicker';
 import FloatingActionButton from '../components/FloatingActionButton';
+import HamburgerMenu from '../components/HamburgerMenu';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -36,7 +37,9 @@ const Dashboard = () => {
                         <h1 className="dashboard-logo-text">Track Me</h1>
                     </div>
 
-                    <div className="dashboard-header-actions">
+                    <HamburgerMenu />
+
+                    <div className="dashboard-header-actions d-none d-md-flex">
                         <Button
                             variant="ghost"
                             size="sm"
