@@ -4,20 +4,33 @@ const STORAGE_KEYS = {
     USERS: 'trackme_users',
     CURRENT_USER: 'trackme_current_user',
     EXPENSES: 'trackme_expenses',
+    INCOME: 'trackme_income',
     CATEGORIES: 'trackme_categories',
+    INCOME_CATEGORIES: 'trackme_income_categories',
     THEME: 'trackme_theme'
 };
 
 // Default expense categories
 const DEFAULT_CATEGORIES = [
-    { id: 'food', name: 'Food & Dining', icon: '🍔', color: '#f59e0b' },
-    { id: 'transport', name: 'Transportation', icon: '🚗', color: '#3b82f6' },
-    { id: 'shopping', name: 'Shopping', icon: '🛍️', color: '#ec4899' },
-    { id: 'entertainment', name: 'Entertainment', icon: '🎬', color: '#8b5cf6' },
-    { id: 'bills', name: 'Bills & Utilities', icon: '💡', color: '#ef4444' },
-    { id: 'health', name: 'Healthcare', icon: '⚕️', color: '#10b981' },
-    { id: 'education', name: 'Education', icon: '📚', color: '#6366f1' },
-    { id: 'other', name: 'Other', icon: '📝', color: '#64748b' }
+    { id: 'food', name: 'Food & Dining', icon: '🍔', color: '#f59e0b', type: 'expense' },
+    { id: 'transport', name: 'Transportation', icon: '🚗', color: '#3b82f6', type: 'expense' },
+    { id: 'shopping', name: 'Shopping', icon: '🛍️', color: '#ec4899', type: 'expense' },
+    { id: 'entertainment', name: 'Entertainment', icon: '🎬', color: '#8b5cf6', type: 'expense' },
+    { id: 'bills', name: 'Bills & Utilities', icon: '💡', color: '#ef4444', type: 'expense' },
+    { id: 'health', name: 'Healthcare', icon: '⚕️', color: '#10b981', type: 'expense' },
+    { id: 'education', name: 'Education', icon: '📚', color: '#6366f1', type: 'expense' },
+    { id: 'other', name: 'Other', icon: '📝', color: '#64748b', type: 'expense' }
+];
+
+// Default income categories
+const DEFAULT_INCOME_CATEGORIES = [
+    { id: 'salary', name: 'Salary', icon: '💼', color: '#10b981', type: 'income' },
+    { id: 'freelance', name: 'Freelance', icon: '💻', color: '#3b82f6', type: 'income' },
+    { id: 'business', name: 'Business', icon: '🏢', color: '#8b5cf6', type: 'income' },
+    { id: 'investment', name: 'Investment', icon: '📈', color: '#f59e0b', type: 'income' },
+    { id: 'rental', name: 'Rental Income', icon: '🏠', color: '#ec4899', type: 'income' },
+    { id: 'gift', name: 'Gift/Bonus', icon: '🎁', color: '#ef4444', type: 'income' },
+    { id: 'other_income', name: 'Other Income', icon: '💵', color: '#64748b', type: 'income' }
 ];
 
 // Simple hash function for passwords (NOT for production use)
@@ -69,6 +82,11 @@ export const initializeCategories = () => {
     const categories = getItem(STORAGE_KEYS.CATEGORIES);
     if (!categories) {
         setItem(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES);
+    }
+
+    const incomeCategories = getItem(STORAGE_KEYS.INCOME_CATEGORIES);
+    if (!incomeCategories) {
+        setItem(STORAGE_KEYS.INCOME_CATEGORIES, DEFAULT_INCOME_CATEGORIES);
     }
 };
 
@@ -225,6 +243,83 @@ export const deleteCategory = (categoryId) => {
     return true;
 };
 
+// Income Management
+export const getIncome = (userId) => {
+    const allIncome = getItem(STORAGE_KEYS.INCOME) || [];
+    return allIncome.filter(income => income.userId === userId);
+};
+
+export const createIncome = (incomeData) => {
+    const allIncome = getItem(STORAGE_KEYS.INCOME) || [];
+
+    const newIncome = {
+        id: Date.now().toString(),
+        ...incomeData,
+        createdAt: new Date().toISOString()
+    };
+
+    allIncome.push(newIncome);
+    setItem(STORAGE_KEYS.INCOME, allIncome);
+
+    return newIncome;
+};
+
+export const updateIncome = (incomeId, updates) => {
+    const allIncome = getItem(STORAGE_KEYS.INCOME) || [];
+    const index = allIncome.findIndex(i => i.id === incomeId);
+
+    if (index === -1) {
+        throw new Error('Income not found');
+    }
+
+    allIncome[index] = {
+        ...allIncome[index],
+        ...updates,
+        updatedAt: new Date().toISOString()
+    };
+
+    setItem(STORAGE_KEYS.INCOME, allIncome);
+    return allIncome[index];
+};
+
+export const deleteIncome = (incomeId) => {
+    const allIncome = getItem(STORAGE_KEYS.INCOME) || [];
+    const filteredIncome = allIncome.filter(i => i.id !== incomeId);
+
+    setItem(STORAGE_KEYS.INCOME, filteredIncome);
+    return true;
+};
+
+// Income Category Management
+export const getIncomeCategories = () => {
+    const categories = getItem(STORAGE_KEYS.INCOME_CATEGORIES);
+    return categories || DEFAULT_INCOME_CATEGORIES;
+};
+
+export const createIncomeCategory = (categoryData) => {
+    const categories = getIncomeCategories();
+
+    const newCategory = {
+        id: Date.now().toString(),
+        ...categoryData,
+        type: 'income',
+        isCustom: true
+    };
+
+    categories.push(newCategory);
+    setItem(STORAGE_KEYS.INCOME_CATEGORIES, categories);
+
+    return newCategory;
+};
+
+export const deleteIncomeCategory = (categoryId) => {
+    const categories = getIncomeCategories();
+    const filteredCategories = categories.filter(c => c.id !== categoryId);
+
+    setItem(STORAGE_KEYS.INCOME_CATEGORIES, filteredCategories);
+    return true;
+};
+
 // Theme Management
 export const getTheme = () => {
     return getItem(STORAGE_KEYS.THEME) || 'light';
@@ -250,6 +345,13 @@ export default {
     getCategories,
     createCategory,
     deleteCategory,
+    getIncome,
+    createIncome,
+    updateIncome,
+    deleteIncome,
+    getIncomeCategories,
+    createIncomeCategory,
+    deleteIncomeCategory,
     getTheme,
     setTheme
 };

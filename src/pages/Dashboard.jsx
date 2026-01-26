@@ -6,6 +6,7 @@ import { useExpense } from '../context/ExpenseContext';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import ExpenseForm from '../components/ExpenseForm';
+import IncomeForm from '../components/IncomeForm';
 import ExpenseList from '../components/ExpenseList';
 import SummaryCards from '../components/SummaryCards';
 import DateRangePicker from '../components/DateRangePicker';
@@ -17,6 +18,7 @@ const Dashboard = () => {
     const { theme, toggleTheme } = useTheme();
     const { categories, selectedCategory, setSelectedCategory } = useExpense();
     const [showAddExpense, setShowAddExpense] = useState(false);
+    const [showAddIncome, setShowAddIncome] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -34,6 +36,15 @@ const Dashboard = () => {
                     </div>
 
                     <div className="dashboard-header-actions">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/budget')}
+                            icon="💸"
+                            className="budget-button"
+                        >
+                            Budget
+                        </Button>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -116,14 +127,23 @@ const Dashboard = () => {
                     {/* Expense List Section */}
                     <div className="dashboard-expenses">
                         <div className="dashboard-expenses-header">
-                            <h3 className="dashboard-expenses-title">Recent Expenses</h3>
-                            <Button
-                                variant="primary"
-                                onClick={() => setShowAddExpense(true)}
-                                icon="+"
-                            >
-                                Add Expense
-                            </Button>
+                            <h3 className="dashboard-expenses-title">Recent Transactions</h3>
+                            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setShowAddIncome(true)}
+                                    icon="+"
+                                >
+                                    Add Income
+                                </Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => setShowAddExpense(true)}
+                                    icon="+"
+                                >
+                                    Add Expense
+                                </Button>
+                            </div>
                         </div>
 
                         <ExpenseList />
@@ -140,6 +160,18 @@ const Dashboard = () => {
                 <ExpenseForm
                     onClose={() => setShowAddExpense(false)}
                     onSuccess={() => setShowAddExpense(false)}
+                />
+            </Modal>
+
+            {/* Add Income Modal */}
+            <Modal
+                isOpen={showAddIncome}
+                onClose={() => setShowAddIncome(false)}
+                title="Add New Income"
+            >
+                <IncomeForm
+                    onClose={() => setShowAddIncome(false)}
+                    onSuccess={() => setShowAddIncome(false)}
                 />
             </Modal>
 

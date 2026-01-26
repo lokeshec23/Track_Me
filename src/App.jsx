@@ -3,11 +3,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ExpenseProvider } from './context/ExpenseContext';
+import { BudgetProvider } from './context/BudgetContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
+import Budget from './pages/Budget';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -131,6 +133,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/budget"
+        element={
+          <ProtectedRoute>
+            <Budget />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
@@ -143,7 +153,9 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <ExpenseProvider>
-            <AppRoutes />
+            <BudgetProvider>
+              <AppRoutes />
+            </BudgetProvider>
           </ExpenseProvider>
         </AuthProvider>
       </ThemeProvider>

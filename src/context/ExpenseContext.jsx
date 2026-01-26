@@ -7,6 +7,13 @@ import {
     getCategories,
     createCategory,
     deleteCategory,
+    getIncome,
+    createIncome,
+    updateIncome,
+    deleteIncome,
+    getIncomeCategories,
+    createIncomeCategory,
+    deleteIncomeCategory,
     initializeCategories
 } from '../services/storage';
 import { useAuth } from './AuthContext';
@@ -24,7 +31,9 @@ export const useExpense = () => {
 export const ExpenseProvider = ({ children }) => {
     const { user } = useAuth();
     const [expenses, setExpenses] = useState([]);
+    const [income, setIncome] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [incomeCategories, setIncomeCategories] = useState([]);
     const [dateRange, setDateRange] = useState({ start: null, end: null });
     const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -32,14 +41,17 @@ export const ExpenseProvider = ({ children }) => {
         // Initialize categories on mount
         initializeCategories();
         loadCategories();
+        loadIncomeCategories();
     }, []);
 
     useEffect(() => {
-        // Load expenses when user changes
+        // Load expenses and income when user changes
         if (user) {
             loadExpenses();
+            loadIncome();
         } else {
             setExpenses([]);
+            setIncome([]);
         }
     }, [user]);
 
@@ -53,6 +65,18 @@ export const ExpenseProvider = ({ children }) => {
     const loadCategories = () => {
         const cats = getCategories();
         setCategories(cats);
+    };
+
+    const loadIncome = () => {
+        if (user) {
+            const userIncome = getIncome(user.id);
+            setIncome(userIncome);
+        }
+    };
+
+    const loadIncomeCategories = () => {
+        const cats = getIncomeCategories();
+        setIncomeCategories(cats);
     };
 
     const addExpense = (expenseData) => {
@@ -87,6 +111,41 @@ export const ExpenseProvider = ({ children }) => {
     const removeCategory = (categoryId) => {
         deleteCategory(categoryId);
         setCategories(prev => prev.filter(c => c.id !== categoryId));
+    };
+
+    // Income Management
+    const addIncome = (incomeData) => {
+        if (!user) return;
+
+        const newIncome = createIncome({
+            ...incomeData,
+            userId: user.id
+        });
+
+        setIncome(prev => [newIncome, ...prev]);
+        return newIncome;
+    };
+
+    const editIncome = (incomeId, updates) => {
+        const updated = updateIncome(incomeId, updates);
+        setIncome(prev => prev.map(i => i.id === incomeId ? updated : i));
+        return updated;
+    };
+
+    const removeIncome = (incomeId) => {
+        deleteIncome(incomeId);
+        setIncome(prev => prev.filter(i => i.id !== incomeId));
+    };
+
+    const addIncomeCategory = (categoryData) => {
+        const newCategory = createIncomeCategory(categoryData);
+        setIncomeCategories(prev => [...prev, newCategory]);
+        return newCategory;
+    };
+
+    const removeIncomeCategory = (categoryId) => {
+        deleteIncomeCategory(categoryId);
+        setIncomeCategories(prev => prev.filter(c => c.id !== categoryId));
     };
 
     // Filter expenses based on date range and category
@@ -138,9 +197,62 @@ export const ExpenseProvider = ({ children }) => {
         return byCategory;
     };
 
+    // Filter income based on date range
+    const getFilteredIncome = () => {
+        let filtered = [...income];
+
+        // Filter by date range
+        if (dateRange.start && dateRange.end) {
+            filtered = filtered.filter(inc => {
+                const incomeDate = new Date(inc.date);
+                const start = new Date(dateRange.start);
+                const end = new Date(dateRange.end);
+                return incomeDate >= start && incomeDate <= end;
+            });
+        }
+
+        return filtered;
+    };
+
+    // Calculate total income
+    const getTotalIncome = (incomeList = null) => {
+        const list = incomeList || getFilteredIncome();
+        return list.reduce((total, inc) => total + parseFloat(inc.amount), 0);
+    };
+
+    // Calculate net savings (income - expenses)
+    const getNetSavings = () => {
+        const totalIncome = getTotalIncome();
+        const totalExpenses = getTotalExpenses();
+        return totalIncome - totalExpenses;
+    };
+
+    // Get income by category
+    const getIncomeByCategory = () => {
+        const filtered = getFilteredIncome();
+        const byCategory = {};
+
+        filtered.forEach(inc => {
+            if (!byCategory[inc.categoryId]) {
+                byCategory[inc.categoryId] = {
+                    total: 0,
+                    count: 0,
+                    income: []
+                };
+            }
+            byCategory[inc.categoryId].total += parseFloat(inc.amount);
+            byCategory[inc.categoryId].count += 1;
+            byCategory[inc.categoryId].income.push(inc);
+        });
+
+        return byCategory;
+    };
+
     const value = {
         expenses,
+        income,
         categories,
+        incomeCategories,
         dateRange,
         selectedCategory,
         setDateRange,
@@ -150,9 +262,18 @@ export const ExpenseProvider = ({ children }) => {
         removeExpense,
         addCategory,
         removeCategory,
+        addIncome,
+        editIncome,
+        removeIncome,
+        addIncomeCategory,
+        removeIncomeCategory,
         getFilteredExpenses,
+        getFilteredIncome,
         getTotalExpenses,
-        getExpensesByCategory
+        getTotalIncome,
+        getNetSavings,
+        getExpensesByCategory,
+        getIncomeByCategory
     };
 
     return (
