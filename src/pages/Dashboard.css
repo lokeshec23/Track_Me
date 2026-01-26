@@ -199,4 +199,8 @@
     .theme-toggle span:not(.btn-icon) {
         display: none;
     }
+
+    .settings-button span:not(.btn-icon) {
+        display: none;
+    }
 }

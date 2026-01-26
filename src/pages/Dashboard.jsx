@@ -37,6 +37,15 @@ const Dashboard = () => {
                         <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => navigate('/settings')}
+                            icon="⚙️"
+                            className="settings-button"
+                        >
+                            Settings
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={toggleTheme}
                             icon={theme === 'dark' ? '☀️' : '🌙'}
                             className="theme-toggle"
