@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { login, register, logout, getAuthUser } from '../services/auth';
+import { updateUserProfile } from '../services/storage';
 
 const AuthContext = createContext();
 
@@ -45,13 +46,21 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const handleCompleteOnboarding = async (onboardingData) => {
+        const updatedUser = updateUserProfile(user.id, onboardingData);
+        setUser(updatedUser);
+        return { success: true };
+    };
+
     const value = {
         user,
         loading,
         login: handleLogin,
         register: handleRegister,
         logout: handleLogout,
-        isAuthenticated: !!user
+        completeOnboarding: handleCompleteOnboarding,
+        isAuthenticated: !!user,
+        needsOnboarding: !!user && !user.isOnboarded
     };
 
     return (

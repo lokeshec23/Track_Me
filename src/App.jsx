@@ -6,10 +6,11 @@ import { ExpenseProvider } from './context/ExpenseContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Onboarding from './pages/Onboarding';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, needsOnboarding } = useAuth();
 
   if (loading) {
     return (
@@ -25,7 +26,15 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (needsOnboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return children;
 };
 
 // Public Route Component (redirect to dashboard if already logged in)
@@ -49,6 +58,35 @@ const PublicRoute = ({ children }) => {
   return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
 };
 
+// Onboarding Route Component (only for authenticated users who need onboarding)
+const OnboardingRoute = ({ children }) => {
+  const { isAuthenticated, loading, needsOnboarding } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        fontSize: '2rem'
+      }}>
+        💰
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!needsOnboarding) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
 function AppRoutes() {
   return (
     <Routes>
@@ -66,6 +104,14 @@ function AppRoutes() {
           <PublicRoute>
             <Register />
           </PublicRoute>
+        }
+      />
+      <Route
+        path="/onboarding"
+        element={
+          <OnboardingRoute>
+            <Onboarding />
+          </OnboardingRoute>
         }
       />
       <Route

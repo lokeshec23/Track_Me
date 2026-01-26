@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import './Modal.css';
 
-const Modal = ({ 
-  isOpen, 
-  onClose, 
-  title, 
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
   children,
   size = 'md',
   showCloseButton = true

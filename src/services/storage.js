@@ -124,6 +124,31 @@ export const clearCurrentUser = () => {
     return removeItem(STORAGE_KEYS.CURRENT_USER);
 };
 
+// Update user profile with onboarding data
+export const updateUserProfile = (userId, profileData) => {
+    const users = getUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+
+    if (userIndex === -1) {
+        throw new Error('User not found');
+    }
+
+    // Update user with profile data
+    users[userIndex] = {
+        ...users[userIndex],
+        ...profileData,
+        updatedAt: new Date().toISOString()
+    };
+
+    setItem(STORAGE_KEYS.USERS, users);
+
+    // Update current user session
+    const updatedUser = { ...users[userIndex], password: undefined };
+    setCurrentUser(updatedUser);
+
+    return updatedUser;
+};
+
 // Expense Management
 export const getExpenses = (userId) => {
     const allExpenses = getItem(STORAGE_KEYS.EXPENSES) || [];
@@ -217,6 +242,7 @@ export default {
     getCurrentUser,
     setCurrentUser,
     clearCurrentUser,
+    updateUserProfile,
     getExpenses,
     createExpense,
     updateExpense,
