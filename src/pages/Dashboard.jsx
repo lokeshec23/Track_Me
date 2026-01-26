@@ -48,6 +48,33 @@ const Dashboard = () => {
                         <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => navigate('/recurring')}
+                            icon="🔄"
+                            className="recurring-button"
+                        >
+                            Recurring
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/goals')}
+                            icon="🎯"
+                            className="goals-button"
+                        >
+                            Goals
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/analytics')}
+                            icon="📊"
+                            className="analytics-button"
+                        >
+                            Analytics
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => navigate('/settings')}
                             icon="⚙️"
                             className="settings-button"

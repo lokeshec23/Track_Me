@@ -4,12 +4,17 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ExpenseProvider } from './context/ExpenseContext';
 import { BudgetProvider } from './context/BudgetContext';
+import { RecurringProvider } from './context/RecurringContext';
+import { GoalsProvider } from './context/GoalsContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
 import Budget from './pages/Budget';
+import Recurring from './pages/Recurring';
+import Goals from './pages/Goals';
+import Analytics from './pages/Analytics';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -141,6 +146,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/recurring"
+        element={
+          <ProtectedRoute>
+            <Recurring />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/goals"
+        element={
+          <ProtectedRoute>
+            <Goals />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
@@ -154,7 +183,11 @@ function App() {
         <AuthProvider>
           <ExpenseProvider>
             <BudgetProvider>
-              <AppRoutes />
+              <RecurringProvider>
+                <GoalsProvider>
+                  <AppRoutes />
+                </GoalsProvider>
+              </RecurringProvider>
             </BudgetProvider>
           </ExpenseProvider>
         </AuthProvider>
