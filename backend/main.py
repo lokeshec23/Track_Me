@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import auth, transactions
+from backend.routers import auth, transactions, goals, budgets, recurring, categories
+
+
 
 app = FastAPI()
 
@@ -20,6 +22,12 @@ app.add_middleware(
 
 app.include_router(auth.router, tags=["Authentication"], prefix="/auth")
 app.include_router(transactions.router, tags=["Transactions"], prefix="/transactions")
+app.include_router(goals.router, tags=["Goals"], prefix="/goals")
+app.include_router(budgets.router, tags=["Budgets"], prefix="/budgets")
+app.include_router(recurring.router, tags=["Recurring"], prefix="/recurring")
+app.include_router(categories.router, tags=["Categories"], prefix="/categories")
+
+
 
 @app.get("/")
 async def root():

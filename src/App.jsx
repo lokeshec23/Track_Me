@@ -194,9 +194,10 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
           <ExpenseProvider>
+
             <BudgetProvider>
               <RecurringProvider>
                 <GoalsProvider>
@@ -207,8 +208,9 @@ function App() {
               </RecurringProvider>
             </BudgetProvider>
           </ExpenseProvider>
-        </AuthProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
+
     </BrowserRouter>
   );
 }

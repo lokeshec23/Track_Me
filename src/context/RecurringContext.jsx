@@ -57,6 +57,7 @@ export const RecurringProvider = ({ children }) => {
         }
     }, [user]);
 
+
     useEffect(() => {
         // Auto-generate recurring transactions
         if (user && recurring.length > 0) {
@@ -67,23 +68,29 @@ export const RecurringProvider = ({ children }) => {
     useEffect(() => {
         // Update stats when recurring changes
         if (user) {
-            const newStats = getRecurringStats(user.id);
+            const newStats = getRecurringStats(recurring);
             setStats(newStats);
         }
     }, [user, recurring]);
 
-    const loadRecurring = () => {
+
+    const loadRecurring = async () => {
         if (user) {
-            const userRecurring = getRecurringTransactions(user.id);
-            setRecurring(userRecurring);
+            try {
+                const userRecurring = await getRecurringTransactions(user.id);
+                setRecurring(userRecurring);
+            } catch (error) {
+                console.error("Failed to load recurring transactions", error);
+            }
         }
     };
 
-    const addRecurring = (recurringData) => {
+
+    const addRecurring = async (recurringData) => {
         if (!user) return { success: false, error: 'User not authenticated' };
 
         try {
-            const newRecurring = createRecurring({
+            const newRecurring = await createRecurring({
                 ...recurringData,
                 userId: user.id
             });
@@ -95,9 +102,10 @@ export const RecurringProvider = ({ children }) => {
         }
     };
 
-    const editRecurring = (recurringId, updates) => {
+
+    const editRecurring = async (recurringId, updates) => {
         try {
-            const updated = updateRecurring(recurringId, updates);
+            const updated = await updateRecurring(recurringId, updates);
             setRecurring(prev => prev.map(r => r.id === recurringId ? updated : r));
             return { success: true, recurring: updated };
         } catch (error) {
@@ -105,9 +113,10 @@ export const RecurringProvider = ({ children }) => {
         }
     };
 
-    const removeRecurring = (recurringId) => {
+
+    const removeRecurring = async (recurringId) => {
         try {
-            deleteRecurring(recurringId);
+            await deleteRecurring(recurringId);
             setRecurring(prev => prev.filter(r => r.id !== recurringId));
             return { success: true };
         } catch (error) {
@@ -115,9 +124,13 @@ export const RecurringProvider = ({ children }) => {
         }
     };
 
-    const toggleStatus = (recurringId) => {
+
+    const toggleStatus = async (recurringId) => {
         try {
-            const updated = toggleRecurringStatus(recurringId);
+            const rec = recurring.find(r => r.id === recurringId);
+            if (!rec) return { success: false, error: 'Not found' };
+
+            const updated = await toggleRecurringStatus(rec, !rec.isActive);
             setRecurring(prev => prev.map(r => r.id === recurringId ? updated : r));
             return { success: true, recurring: updated };
         } catch (error) {
@@ -125,12 +138,14 @@ export const RecurringProvider = ({ children }) => {
         }
     };
 
-    const generateDueTransactions = () => {
+
+    const generateDueTransactions = async () => {
         if (!user) return;
 
-        const toGenerate = getRecurringToGenerate(user.id);
+        const toGenerate = getRecurringToGenerate(recurring);
 
-        toGenerate.forEach(rec => {
+        // Process sequentially to be safe
+        for (const rec of toGenerate) {
             // Create the transaction
             const transactionData = {
                 amount: rec.amount,
@@ -140,25 +155,27 @@ export const RecurringProvider = ({ children }) => {
             };
 
             if (rec.type === 'expense') {
-                addExpense(transactionData);
+                await addExpense(transactionData);
             } else {
-                addIncome(transactionData);
+                await addIncome(transactionData);
             }
 
             // Mark as generated
-            markAsGenerated(rec.id);
-        });
+            await markAsGenerated(rec.id);
+        }
 
         // Reload recurring to update lastGenerated dates
         if (toGenerate.length > 0) {
-            loadRecurring();
+            await loadRecurring();
         }
     };
 
+
     const getUpcoming = (days = 30) => {
-        if (!user) return [];
-        return getUpcomingRecurring(user.id, days);
+        if (!user || recurring.length === 0) return [];
+        return getUpcomingRecurring(recurring, days);
     };
+
 
     const getRecurringWithNextDate = () => {
         return recurring.map(rec => ({

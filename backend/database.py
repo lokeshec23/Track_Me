@@ -12,3 +12,9 @@ database = client.track_me
 
 user_collection = database.get_collection("users")
 transaction_collection = database.get_collection("transactions")
+goal_collection = database.get_collection("goals")
+budget_collection = database.get_collection("budgets")
+recurring_collection = database.get_collection("recurring")
+category_collection = database.get_collection("categories")
+
+

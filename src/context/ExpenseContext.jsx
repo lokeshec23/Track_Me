@@ -1,14 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
-import {
-    getCategories,
-    createCategory,
-    deleteCategory,
-    getIncomeCategories,
-    createIncomeCategory,
-    deleteIncomeCategory,
-    initializeCategories
-} from '../services/storage';
+import { initializeCategories } from '../services/storage';
+
 import { useAuth } from './AuthContext';
 
 const ExpenseContext = createContext();
@@ -31,20 +24,22 @@ export const ExpenseProvider = ({ children }) => {
     const [selectedCategory, setSelectedCategory] = useState(null);
 
     useEffect(() => {
-        // Initialize categories on mount
-        initializeCategories();
-        loadCategories();
-        loadIncomeCategories();
+        // Initialize categories on mount? 
+        // We fetch from API now.
     }, []);
 
     useEffect(() => {
         if (user) {
             fetchTransactions();
+            loadCategories(); // Fetch custom + default categories from backend
         } else {
             setExpenses([]);
             setIncome([]);
+            setCategories([]); // Or set to empty
+            setIncomeCategories([]);
         }
     }, [user]);
+
 
     const fetchTransactions = async () => {
         try {
@@ -57,15 +52,21 @@ export const ExpenseProvider = ({ children }) => {
         }
     };
 
-    const loadCategories = () => {
-        const cats = getCategories();
-        setCategories(cats);
+    const loadCategories = async () => {
+        // Fetch all categories (backend merges defaults + custom)
+        try {
+            const res = await api.get('/categories/');
+            const allCats = res.data;
+            setCategories(allCats.filter(c => c.type === 'expense'));
+            setIncomeCategories(allCats.filter(c => c.type === 'income'));
+        } catch (err) {
+            console.error("Failed to load categories", err);
+        }
     };
 
-    const loadIncomeCategories = () => {
-        const cats = getIncomeCategories();
-        setIncomeCategories(cats);
-    };
+    // Removed loadIncomeCategories as it's handled above
+    const loadIncomeCategories = () => { };
+
 
     const addExpense = async (expenseData) => {
         if (!user) return;
@@ -96,16 +97,23 @@ export const ExpenseProvider = ({ children }) => {
         } catch (err) { console.error(err); throw err; }
     };
 
-    const addCategory = (categoryData) => {
-        const newCategory = createCategory(categoryData);
-        setCategories(prev => [...prev, newCategory]);
-        return newCategory;
+    const addCategory = async (categoryData) => {
+        try {
+            const res = await api.post('/categories/', { ...categoryData, type: 'expense' });
+            const newCategory = res.data;
+            setCategories(prev => [...prev, newCategory]);
+            return newCategory;
+        } catch (err) { console.error(err); throw err; }
     };
 
-    const removeCategory = (categoryId) => {
-        deleteCategory(categoryId);
-        setCategories(prev => prev.filter(c => c.id !== categoryId));
+
+    const removeCategory = async (categoryId) => {
+        try {
+            await api.delete(`/categories/${categoryId}`);
+            setCategories(prev => prev.filter(c => c.id !== categoryId));
+        } catch (err) { console.error(err); throw err; }
     };
+
 
     const addIncome = async (incomeData) => {
         if (!user) return;
@@ -136,16 +144,23 @@ export const ExpenseProvider = ({ children }) => {
         } catch (err) { console.error(err); throw err; }
     };
 
-    const addIncomeCategory = (categoryData) => {
-        const newCategory = createIncomeCategory(categoryData);
-        setIncomeCategories(prev => [...prev, newCategory]);
-        return newCategory;
+    const addIncomeCategory = async (categoryData) => {
+        try {
+            const res = await api.post('/categories/', { ...categoryData, type: 'income' });
+            const newCategory = res.data;
+            setIncomeCategories(prev => [...prev, newCategory]);
+            return newCategory;
+        } catch (err) { console.error(err); throw err; }
     };
 
-    const removeIncomeCategory = (categoryId) => {
-        deleteIncomeCategory(categoryId);
-        setIncomeCategories(prev => prev.filter(c => c.id !== categoryId));
+
+    const removeIncomeCategory = async (categoryId) => {
+        try {
+            await api.delete(`/categories/${categoryId}`);
+            setIncomeCategories(prev => prev.filter(c => c.id !== categoryId));
+        } catch (err) { console.error(err); throw err; }
     };
+
 
     const getFilteredExpenses = () => {
         let filtered = [...expenses];

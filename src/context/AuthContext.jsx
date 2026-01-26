@@ -19,21 +19,33 @@ export const AuthProvider = ({ children }) => {
         const checkUser = async () => {
             const token = localStorage.getItem('token');
             if (token) {
-                setUser({ token });
+                try {
+                    // Validate token and get user details
+                    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                    const response = await api.get('/auth/me');
+                    setUser({ token, ...response.data });
+                } catch (error) {
+                    console.error("Session check failed", error);
+                    localStorage.removeItem('token');
+                    setUser(null);
+                }
             }
             setLoading(false);
         };
         checkUser();
     }, []);
 
+
     const login = async (email, password) => {
         try {
             const response = await api.post('/auth/login', { email, password });
-            const { access_token } = response.data;
+            const { access_token, is_onboarded } = response.data;
             localStorage.setItem('token', access_token);
+            api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
 
-            const userObj = { email, token: access_token };
+            const userObj = { email, token: access_token, is_onboarded };
             setUser(userObj);
+
 
             await migrateData();
             return { success: true, user: userObj };
@@ -50,8 +62,9 @@ export const AuthProvider = ({ children }) => {
                 email: userData.email,
                 password: userData.password
             });
-            // Auto login
-            return await login(userData.email, userData.password);
+            // Do not auto login, let them login manually to check flow
+            return { success: true };
+
         } catch (error) {
             console.error("Registration failed", error);
             return { success: false, error: error.response?.data?.detail || error.message || "Registration failed" };
@@ -64,10 +77,16 @@ export const AuthProvider = ({ children }) => {
     };
 
     const completeOnboarding = async (data) => {
-        console.log("Onboarding data", data);
-        // Placeholder: If backend supports profile update, call it here.
-        return { success: true };
+        try {
+            const response = await api.put('/auth/onboarding', data);
+            setUser(prev => ({ ...prev, is_onboarded: true, onboarding_data: data }));
+            return { success: true, user: response.data.user };
+        } catch (error) {
+            console.error("Onboarding failed", error);
+            return { success: false, error: error.response?.data?.detail || "Onboarding failed" };
+        }
     };
+
 
     const migrateData = async () => {
         const expenses = JSON.parse(localStorage.getItem('trackme_expenses') || '[]');
@@ -119,8 +138,9 @@ export const AuthProvider = ({ children }) => {
         logout,
         completeOnboarding,
         isAuthenticated: !!user,
-        needsOnboarding: false
+        needsOnboarding: user && !user.is_onboarded
     };
+
 
     return (
         <AuthContext.Provider value={value}>

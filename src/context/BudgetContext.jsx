@@ -1,9 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
     getBudgets,
-    getBudgetById,
-    getBudgetByCategory,
-    getOverallBudget,
     createBudget,
     updateBudget,
     deleteBudget,
@@ -42,23 +39,29 @@ export const BudgetProvider = ({ children }) => {
     useEffect(() => {
         // Update alerts when budgets or expenses change
         if (user && budgets.length > 0) {
-            const budgetAlerts = getBudgetAlerts(user.id, expenses);
+            const budgetAlerts = getBudgetAlerts(budgets, expenses);
             setAlerts(budgetAlerts);
         }
     }, [user, budgets, expenses]);
 
-    const loadBudgets = () => {
+
+    const loadBudgets = async () => {
         if (user) {
-            const userBudgets = getBudgets(user.id);
-            setBudgets(userBudgets);
+            try {
+                const userBudgets = await getBudgets(user.id);
+                setBudgets(userBudgets);
+            } catch (error) {
+                console.error("Failed to load budgets", error);
+            }
         }
     };
 
-    const addBudget = (budgetData) => {
+
+    const addBudget = async (budgetData) => {
         if (!user) return;
 
         try {
-            const newBudget = createBudget({
+            const newBudget = await createBudget({
                 ...budgetData,
                 userId: user.id
             });
@@ -70,9 +73,10 @@ export const BudgetProvider = ({ children }) => {
         }
     };
 
-    const editBudget = (budgetId, updates) => {
+
+    const editBudget = async (budgetId, updates) => {
         try {
-            const updated = updateBudget(budgetId, updates);
+            const updated = await updateBudget(budgetId, updates);
             setBudgets(prev => prev.map(b => b.id === budgetId ? updated : b));
             return { success: true, budget: updated };
         } catch (error) {
@@ -80,9 +84,10 @@ export const BudgetProvider = ({ children }) => {
         }
     };
 
-    const removeBudget = (budgetId) => {
+
+    const removeBudget = async (budgetId) => {
         try {
-            deleteBudget(budgetId);
+            await deleteBudget(budgetId);
             setBudgets(prev => prev.filter(b => b.id !== budgetId));
             return { success: true };
         } catch (error) {
@@ -90,15 +95,35 @@ export const BudgetProvider = ({ children }) => {
         }
     };
 
+
     const getBudgetForCategory = (categoryId, period = 'monthly') => {
         if (!user) return null;
-        return getBudgetByCategory(user.id, categoryId, period);
+        // Use local state instead of service
+        return budgets.find(b =>
+            b.categoryId === categoryId &&
+            b.period === period &&
+            isCurrentPeriod(b)
+        );
     };
 
     const getOverall = (period = 'monthly') => {
         if (!user) return null;
-        return getOverallBudget(user.id, period);
+        return getBudgetForCategory('overall', period);
     };
+
+    const isCurrentPeriod = (budget) => {
+        const now = new Date();
+        const startDate = new Date(budget.startDate);
+
+        if (budget.period === 'monthly') {
+            return startDate.getMonth() === now.getMonth() &&
+                startDate.getFullYear() === now.getFullYear();
+        } else if (budget.period === 'yearly') {
+            return startDate.getFullYear() === now.getFullYear();
+        }
+        return false;
+    };
+
 
     const getBudgetUtilization = (budgetId) => {
         const budget = budgets.find(b => b.id === budgetId);
@@ -108,8 +133,9 @@ export const BudgetProvider = ({ children }) => {
 
     const getAllUtilizations = () => {
         if (!user) return [];
-        return getAllBudgetUtilizations(user.id, expenses);
+        return getAllBudgetUtilizations(budgets, expenses);
     };
+
 
     const getCategoryBudgetStatus = (categoryId) => {
         const budget = getBudgetForCategory(categoryId);

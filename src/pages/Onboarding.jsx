@@ -135,9 +135,9 @@ const Onboarding = () => {
                 cardHolder: formData.creditCardHolder,
                 expiry: formData.creditCardExpiry,
                 creditLimit: Number(formData.creditLimit)
-            },
-            isOnboarded: true
+            }
         };
+
 
         await completeOnboarding(onboardingData);
         navigate('/dashboard');

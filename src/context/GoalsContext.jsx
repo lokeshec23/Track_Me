@@ -46,11 +46,14 @@ export const GoalsProvider = ({ children }) => {
     }, [user]);
 
     useEffect(() => {
-        if (user) {
-            const newStats = getGoalStats(user.id);
+        if (user && goals.length > 0) {
+            const newStats = getGoalStats(goals);
             setStats(newStats);
+        } else if (goals.length === 0) {
+            resetStats();
         }
     }, [user, goals]);
+
 
     const resetStats = () => {
         setStats({
@@ -64,18 +67,23 @@ export const GoalsProvider = ({ children }) => {
         });
     };
 
-    const loadGoals = () => {
+    const loadGoals = async () => {
         if (user) {
-            const userGoals = getGoals(user.id);
-            setGoals(userGoals);
+            try {
+                const userGoals = await getGoals(user.id);
+                setGoals(userGoals);
+            } catch (error) {
+                console.error("Failed to load goals", error);
+            }
         }
     };
 
-    const addGoal = (goalData) => {
+
+    const addGoal = async (goalData) => {
         if (!user) return { success: false, error: 'User not authenticated' };
 
         try {
-            const newGoal = createGoal({
+            const newGoal = await createGoal({
                 ...goalData,
                 userId: user.id
             });
@@ -87,9 +95,10 @@ export const GoalsProvider = ({ children }) => {
         }
     };
 
-    const editGoal = (goalId, updates) => {
+
+    const editGoal = async (goalId, updates) => {
         try {
-            const updated = updateGoal(goalId, updates);
+            const updated = await updateGoal(goalId, updates);
             setGoals(prev => prev.map(g => g.id === goalId ? updated : g));
             return { success: true, goal: updated };
         } catch (error) {
@@ -97,9 +106,10 @@ export const GoalsProvider = ({ children }) => {
         }
     };
 
-    const removeGoal = (goalId) => {
+
+    const removeGoal = async (goalId) => {
         try {
-            deleteGoal(goalId);
+            await deleteGoal(goalId);
             setGoals(prev => prev.filter(g => g.id !== goalId));
             return { success: true };
         } catch (error) {
@@ -107,15 +117,25 @@ export const GoalsProvider = ({ children }) => {
         }
     };
 
-    const contribute = (goalId, amount) => {
+
+    const contribute = async (goalId, amount) => {
         try {
-            const updated = addContribution(goalId, parseFloat(amount));
+            // Fetch current goal first to calculate new amount or handle via backend logic if supported
+            // Better: Let backend handle increment, but our generic updateGoal just replaces.
+            // So we need: find goal -> calc -> update
+            const goal = goals.find(g => g.id === goalId);
+            if (!goal) throw new Error("Goal not found");
+
+            const newAmount = (goal.currentAmount || 0) + parseFloat(amount);
+            const updated = await updateGoal(goalId, { currentAmount: newAmount });
+
             setGoals(prev => prev.map(g => g.id === goalId ? updated : g));
             return { success: true, goal: updated };
         } catch (error) {
             return { success: false, error: error.message };
         }
     };
+
 
     const getGoalProgress = (goalId) => {
         const goal = goals.find(g => g.id === goalId);
@@ -133,9 +153,10 @@ export const GoalsProvider = ({ children }) => {
     };
 
     const getUpcoming = (days = 30) => {
-        if (!user) return [];
-        return getUpcomingDeadlines(user.id, days);
+        if (!user || goals.length === 0) return [];
+        return getUpcomingDeadlines(goals, days);
     };
+
 
     const value = {
         goals,

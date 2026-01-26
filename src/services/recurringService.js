@@ -1,128 +1,62 @@
-// Recurring Transaction Service - LocalStorage operations for recurring transactions
-
-const STORAGE_KEYS = {
-    RECURRING: 'trackme_recurring'
-};
-
-/**
- * Recurring Transaction structure:
- * {
- *   id: string,
- *   userId: string,
- *   type: 'expense' | 'income',
- *   amount: number,
- *   categoryId: string,
- *   description: string,
- *   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly',
- *   startDate: string (ISO),
- *   endDate: string (ISO) | null,
- *   lastGenerated: string (ISO) | null,
- *   isActive: boolean,
- *   createdAt: string (ISO),
- *   updatedAt: string (ISO)
- * }
- */
-
-// Get data from localStorage
-const getItem = (key) => {
-    try {
-        const item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : null;
-    } catch (error) {
-        console.error(`Error getting ${key} from localStorage:`, error);
-        return null;
-    }
-};
-
-// Set data to localStorage
-const setItem = (key, value) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-    } catch (error) {
-        console.error(`Error setting ${key} to localStorage:`, error);
-        return false;
-    }
-};
+import api from './api';
 
 // Get all recurring transactions
-export const getRecurringTransactions = (userId) => {
-    const allRecurring = getItem(STORAGE_KEYS.RECURRING) || [];
-    return userId ? allRecurring.filter(rec => rec.userId === userId) : allRecurring;
-};
-
-// Get recurring transaction by ID
-export const getRecurringById = (recurringId) => {
-    const allRecurring = getItem(STORAGE_KEYS.RECURRING) || [];
-    return allRecurring.find(rec => rec.id === recurringId);
+export const getRecurringTransactions = async (userId) => {
+    try {
+        const response = await api.get('/recurring/');
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 // Create new recurring transaction
-export const createRecurring = (recurringData) => {
-    const allRecurring = getItem(STORAGE_KEYS.RECURRING) || [];
-
-    const newRecurring = {
-        id: Date.now().toString(),
-        userId: recurringData.userId,
-        type: recurringData.type,
-        amount: parseFloat(recurringData.amount),
-        categoryId: recurringData.categoryId,
-        description: recurringData.description || '',
-        frequency: recurringData.frequency,
-        startDate: recurringData.startDate || new Date().toISOString(),
-        endDate: recurringData.endDate || null,
-        lastGenerated: null,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-
-    allRecurring.push(newRecurring);
-    setItem(STORAGE_KEYS.RECURRING, allRecurring);
-
-    return newRecurring;
+export const createRecurring = async (recurringData) => {
+    try {
+        const response = await api.post('/recurring/', recurringData);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 // Update recurring transaction
-export const updateRecurring = (recurringId, updates) => {
-    const allRecurring = getItem(STORAGE_KEYS.RECURRING) || [];
-    const index = allRecurring.findIndex(r => r.id === recurringId);
-
-    if (index === -1) {
-        throw new Error('Recurring transaction not found');
+export const updateRecurring = async (recurringId, updates) => {
+    try {
+        const response = await api.put(`/recurring/${recurringId}`, updates);
+        return response.data;
+    } catch (error) {
+        throw error;
     }
-
-    allRecurring[index] = {
-        ...allRecurring[index],
-        ...updates,
-        amount: updates.amount ? parseFloat(updates.amount) : allRecurring[index].amount,
-        updatedAt: new Date().toISOString()
-    };
-
-    setItem(STORAGE_KEYS.RECURRING, allRecurring);
-    return allRecurring[index];
 };
 
 // Delete recurring transaction
-export const deleteRecurring = (recurringId) => {
-    const allRecurring = getItem(STORAGE_KEYS.RECURRING) || [];
-    const filteredRecurring = allRecurring.filter(r => r.id !== recurringId);
-
-    setItem(STORAGE_KEYS.RECURRING, filteredRecurring);
-    return true;
-};
-
-// Toggle recurring transaction active status
-export const toggleRecurringStatus = (recurringId) => {
-    const recurring = getRecurringById(recurringId);
-    if (!recurring) {
-        throw new Error('Recurring transaction not found');
+export const deleteRecurring = async (recurringId) => {
+    try {
+        await api.delete(`/recurring/${recurringId}`);
+        return true;
+    } catch (error) {
+        throw error;
     }
-
-    return updateRecurring(recurringId, { isActive: !recurring.isActive });
 };
 
-// Calculate next occurrence date
+// Toggle status - handled via updateRecurring
+export const toggleRecurringStatus = async (recurring, isActive) => {
+    // Changed signature to take recurring object and new status, or just use updateRecurring directly in context
+    return await updateRecurring(recurring.id, { isActive });
+    return await updateRecurring(recurring.id, { isActive });
+};
+
+// Mark recurring as generated
+export const markAsGenerated = async (recurringId) => {
+    return await updateRecurring(recurringId, {
+        lastGenerated: new Date().toISOString()
+    });
+};
+
+
+
+// Helper Pure Functions
 export const getNextOccurrence = (recurring) => {
     const lastDate = recurring.lastGenerated
         ? new Date(recurring.lastGenerated)
@@ -150,53 +84,39 @@ export const getNextOccurrence = (recurring) => {
     return nextDate;
 };
 
-// Check if recurring transaction should generate
 export const shouldGenerate = (recurring) => {
     if (!recurring.isActive) return false;
 
     const now = new Date();
     const startDate = new Date(recurring.startDate);
 
-    // Not started yet
     if (now < startDate) return false;
 
-    // Check if ended
     if (recurring.endDate) {
         const endDate = new Date(recurring.endDate);
         if (now > endDate) return false;
     }
 
-    // First time generation
     if (!recurring.lastGenerated) {
         return now >= startDate;
     }
 
-    // Check if next occurrence has passed
     const nextOccurrence = getNextOccurrence(recurring);
     return nextOccurrence && now >= nextOccurrence;
 };
 
-// Get all recurring transactions that need to be generated
-export const getRecurringToGenerate = (userId) => {
-    const recurring = getRecurringTransactions(userId);
-    return recurring.filter(rec => shouldGenerate(rec));
+export const getRecurringToGenerate = (recurringList) => {
+    // Changed signature to take list
+    return recurringList.filter(rec => shouldGenerate(rec));
 };
 
-// Mark recurring as generated
-export const markAsGenerated = (recurringId) => {
-    return updateRecurring(recurringId, {
-        lastGenerated: new Date().toISOString()
-    });
-};
-
-// Get upcoming recurring transactions (next 30 days)
-export const getUpcomingRecurring = (userId, days = 30) => {
-    const recurring = getRecurringTransactions(userId).filter(r => r.isActive);
-    const now = new Date();
+export const getUpcomingRecurring = (recurringList, days = 30) => {
+    // Changed signature to take list
+    const active = recurringList.filter(r => r.isActive);
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
 
-    return recurring.map(rec => {
+    return active.map(rec => {
         const nextOccurrence = getNextOccurrence(rec);
         if (!nextOccurrence || nextOccurrence > futureDate) return null;
 
@@ -207,20 +127,18 @@ export const getUpcomingRecurring = (userId, days = 30) => {
     }).filter(Boolean);
 };
 
-// Get recurring transaction statistics
-export const getRecurringStats = (userId) => {
-    const recurring = getRecurringTransactions(userId);
-
-    const active = recurring.filter(r => r.isActive);
-    const paused = recurring.filter(r => !r.isActive);
-    const expenses = recurring.filter(r => r.type === 'expense');
-    const income = recurring.filter(r => r.type === 'income');
+export const getRecurringStats = (recurringList) => {
+    // Changed signature to take list
+    const active = recurringList.filter(r => r.isActive);
+    const paused = recurringList.filter(r => !r.isActive);
+    const expenses = recurringList.filter(r => r.type === 'expense');
+    const income = recurringList.filter(r => r.type === 'income');
 
     // Calculate monthly impact
     const monthlyExpenses = expenses
         .filter(r => r.isActive)
         .reduce((total, rec) => {
-            let monthlyAmount = rec.amount;
+            let monthlyAmount = parseFloat(rec.amount);
             switch (rec.frequency) {
                 case 'daily':
                     monthlyAmount *= 30;
@@ -231,7 +149,6 @@ export const getRecurringStats = (userId) => {
                 case 'yearly':
                     monthlyAmount /= 12;
                     break;
-                // monthly stays the same
             }
             return total + monthlyAmount;
         }, 0);
@@ -239,7 +156,7 @@ export const getRecurringStats = (userId) => {
     const monthlyIncome = income
         .filter(r => r.isActive)
         .reduce((total, rec) => {
-            let monthlyAmount = rec.amount;
+            let monthlyAmount = parseFloat(rec.amount);
             switch (rec.frequency) {
                 case 'daily':
                     monthlyAmount *= 30;
@@ -255,7 +172,7 @@ export const getRecurringStats = (userId) => {
         }, 0);
 
     return {
-        total: recurring.length,
+        total: recurringList.length,
         active: active.length,
         paused: paused.length,
         expenses: expenses.length,
@@ -264,19 +181,4 @@ export const getRecurringStats = (userId) => {
         monthlyIncome,
         monthlyNet: monthlyIncome - monthlyExpenses
     };
-};
-
-export default {
-    getRecurringTransactions,
-    getRecurringById,
-    createRecurring,
-    updateRecurring,
-    deleteRecurring,
-    toggleRecurringStatus,
-    getNextOccurrence,
-    shouldGenerate,
-    getRecurringToGenerate,
-    markAsGenerated,
-    getUpcomingRecurring,
-    getRecurringStats
 };

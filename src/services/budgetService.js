@@ -1,152 +1,46 @@
-// Budget Service - LocalStorage operations for budget management
-
-const STORAGE_KEYS = {
-    BUDGETS: 'trackme_budgets'
-};
-
-/**
- * Budget structure:
- * {
- *   id: string,
- *   userId: string,
- *   categoryId: string | 'overall', // 'overall' for total monthly budget
- *   amount: number,
- *   period: 'monthly' | 'yearly',
- *   startDate: string (ISO),
- *   alertThreshold: number (percentage, e.g., 80 for 80%)
- *   createdAt: string (ISO),
- *   updatedAt: string (ISO)
- * }
- */
-
-// Get data from localStorage
-const getItem = (key) => {
-    try {
-        const item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : null;
-    } catch (error) {
-        console.error(`Error getting ${key} from localStorage:`, error);
-        return null;
-    }
-};
-
-// Set data to localStorage
-const setItem = (key, value) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-    } catch (error) {
-        console.error(`Error setting ${key} to localStorage:`, error);
-        return false;
-    }
-};
+import api from './api';
 
 // Get all budgets
-export const getBudgets = (userId) => {
-    const allBudgets = getItem(STORAGE_KEYS.BUDGETS) || [];
-    return userId ? allBudgets.filter(budget => budget.userId === userId) : allBudgets;
-};
-
-// Get budget by ID
-export const getBudgetById = (budgetId) => {
-    const allBudgets = getItem(STORAGE_KEYS.BUDGETS) || [];
-    return allBudgets.find(budget => budget.id === budgetId);
-};
-
-// Get budget by category
-export const getBudgetByCategory = (userId, categoryId, period = 'monthly') => {
-    const budgets = getBudgets(userId);
-    return budgets.find(budget =>
-        budget.categoryId === categoryId &&
-        budget.period === period &&
-        isCurrentPeriod(budget)
-    );
-};
-
-// Get overall budget
-export const getOverallBudget = (userId, period = 'monthly') => {
-    return getBudgetByCategory(userId, 'overall', period);
+export const getBudgets = async (userId) => {
+    try {
+        const response = await api.get('/budgets/');
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 // Create new budget
-export const createBudget = (budgetData) => {
-    const allBudgets = getItem(STORAGE_KEYS.BUDGETS) || [];
-
-    // Check if budget already exists for this category and period
-    const existingBudget = allBudgets.find(b =>
-        b.userId === budgetData.userId &&
-        b.categoryId === budgetData.categoryId &&
-        b.period === budgetData.period &&
-        isCurrentPeriod(b)
-    );
-
-    if (existingBudget) {
-        throw new Error('Budget already exists for this category and period');
+export const createBudget = async (budgetData) => {
+    try {
+        const response = await api.post('/budgets/', budgetData);
+        return response.data;
+    } catch (error) {
+        throw error;
     }
-
-    const newBudget = {
-        id: Date.now().toString(),
-        userId: budgetData.userId,
-        categoryId: budgetData.categoryId,
-        amount: parseFloat(budgetData.amount),
-        period: budgetData.period || 'monthly',
-        startDate: budgetData.startDate || new Date().toISOString(),
-        alertThreshold: budgetData.alertThreshold || 80,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-
-    allBudgets.push(newBudget);
-    setItem(STORAGE_KEYS.BUDGETS, allBudgets);
-
-    return newBudget;
 };
 
 // Update budget
-export const updateBudget = (budgetId, updates) => {
-    const allBudgets = getItem(STORAGE_KEYS.BUDGETS) || [];
-    const index = allBudgets.findIndex(b => b.id === budgetId);
-
-    if (index === -1) {
-        throw new Error('Budget not found');
+export const updateBudget = async (budgetId, updates) => {
+    try {
+        const response = await api.put(`/budgets/${budgetId}`, updates);
+        return response.data;
+    } catch (error) {
+        throw error;
     }
-
-    allBudgets[index] = {
-        ...allBudgets[index],
-        ...updates,
-        amount: updates.amount ? parseFloat(updates.amount) : allBudgets[index].amount,
-        updatedAt: new Date().toISOString()
-    };
-
-    setItem(STORAGE_KEYS.BUDGETS, allBudgets);
-    return allBudgets[index];
 };
 
 // Delete budget
-export const deleteBudget = (budgetId) => {
-    const allBudgets = getItem(STORAGE_KEYS.BUDGETS) || [];
-    const filteredBudgets = allBudgets.filter(b => b.id !== budgetId);
-
-    setItem(STORAGE_KEYS.BUDGETS, filteredBudgets);
-    return true;
-};
-
-// Check if budget is for current period
-const isCurrentPeriod = (budget) => {
-    const now = new Date();
-    const startDate = new Date(budget.startDate);
-
-    if (budget.period === 'monthly') {
-        return startDate.getMonth() === now.getMonth() &&
-            startDate.getFullYear() === now.getFullYear();
-    } else if (budget.period === 'yearly') {
-        return startDate.getFullYear() === now.getFullYear();
+export const deleteBudget = async (budgetId) => {
+    try {
+        await api.delete(`/budgets/${budgetId}`);
+        return true;
+    } catch (error) {
+        throw error;
     }
-
-    return false;
 };
 
-// Calculate budget utilization
+// Helper functions (Pure)
 export const calculateBudgetUtilization = (budget, expenses) => {
     if (!budget || !expenses) {
         return {
@@ -199,18 +93,17 @@ export const calculateBudgetUtilization = (budget, expenses) => {
     };
 };
 
-// Get all budget utilizations for a user
-export const getAllBudgetUtilizations = (userId, expenses) => {
-    const budgets = getBudgets(userId);
+export const getAllBudgetUtilizations = (budgets, expenses) => {
+    // Changed signature to take budgets array
     return budgets.map(budget => ({
         budget,
         utilization: calculateBudgetUtilization(budget, expenses)
     }));
 };
 
-// Check if any budgets need alerts
-export const getBudgetAlerts = (userId, expenses) => {
-    const utilizations = getAllBudgetUtilizations(userId, expenses);
+export const getBudgetAlerts = (budgets, expenses) => {
+    // Changed signature to take budgets array
+    const utilizations = getAllBudgetUtilizations(budgets, expenses);
 
     return utilizations
         .filter(({ utilization }) => utilization.isOverBudget || utilization.isNearLimit)
@@ -224,15 +117,5 @@ export const getBudgetAlerts = (userId, expenses) => {
         }));
 };
 
-export default {
-    getBudgets,
-    getBudgetById,
-    getBudgetByCategory,
-    getOverallBudget,
-    createBudget,
-    updateBudget,
-    deleteBudget,
-    calculateBudgetUtilization,
-    getAllBudgetUtilizations,
-    getBudgetAlerts
-};
+// Removed getters that depended on local storage fetch (getBudgetByCategory, etc.)
+// These should be handled by finding in the 'budgets' list in Context.

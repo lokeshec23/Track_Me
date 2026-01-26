@@ -2,7 +2,8 @@ from fastapi import APIRouter, Body, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from backend.database import user_collection
-from backend.models.user import UserSchema, UserLoginSchema, Token
+from backend.models.user import UserSchema, UserLoginSchema, Token, OnboardingSchema
+
 from backend.utils import get_password_hash, verify_password, create_access_token
 from jose import jwt, JWTError
 
@@ -18,7 +19,9 @@ async def register(user: UserSchema = Body(...)):
         raise HTTPException(status_code=400, detail="Email already exists")
     
     user_dict["password"] = get_password_hash(user_dict["password"])
+    user_dict["is_onboarded"] = False
     new_user = await user_collection.insert_one(user_dict)
+
     created_user = await user_collection.find_one({"_id": new_user.inserted_id})
     return created_user
 
@@ -31,7 +34,11 @@ async def login(user: UserLoginSchema = Body(...)):
     access_token = create_access_token(data={"sub": user.email})
     return {
         "access_token": access_token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "is_onboarded": user_record.get("is_onboarded", False),
+        "theme": user_record.get("theme", "light")
+
+
     }
 
 from backend.models.user import TokenData
@@ -55,4 +62,37 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     if user is None:
         raise credentials_exception
     return user
+
+@router.get("/me", response_model=UserSchema)
+async def read_users_me(current_user = Depends(get_current_user)):
+    return current_user
+
+@router.put("/onboarding", response_description="Complete user onboarding")
+async def complete_onboarding(data: OnboardingSchema = Body(...), current_user = Depends(get_current_user)):
+    # Update user with onboarding data and set is_onboarded to True
+    updated_user = await user_collection.find_one_and_update(
+        {"_id": current_user["_id"]},
+        {
+            "$set": {
+                "onboarding_data": data.dict(),
+                "is_onboarded": True
+            }
+        },
+        return_document=True
+    )
+    return {"message": "Onboarding completed successfully", "user": updated_user}
+
+@router.put("/theme", response_description="Update user theme")
+async def update_theme(theme: str = Body(..., embed=True), current_user = Depends(get_current_user)):
+    updated_user = await user_collection.find_one_and_update(
+        {"_id": current_user["_id"]},
+        {
+            "$set": {
+                "theme": theme
+            }
+        },
+        return_document=True
+    )
+    return {"message": "Theme updated", "theme": theme}
+
 
