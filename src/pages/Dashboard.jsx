@@ -10,6 +10,7 @@ import IncomeForm from '../components/IncomeForm';
 import ExpenseList from '../components/ExpenseList';
 import SummaryCards from '../components/SummaryCards';
 import DateRangePicker from '../components/DateRangePicker';
+import FloatingActionButton from '../components/FloatingActionButton';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -203,13 +204,12 @@ const Dashboard = () => {
             </Modal>
 
             {/* Floating Add Button (Mobile) */}
-            <button
-                className="dashboard-fab"
+            {/* Floating Add Button (Mobile) */}
+            <FloatingActionButton
                 onClick={() => setShowAddExpense(true)}
-                aria-label="Add expense"
-            >
-                +
-            </button>
+                icon="+"
+                label="Add Transaction"
+            />
         </div>
     );
 };

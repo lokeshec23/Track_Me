@@ -1,0 +1,66 @@
+.fab {
+    position: fixed;
+    bottom: 80px;
+    /* Above bottom nav */
+    right: var(--spacing-lg);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-base);
+    z-index: 999;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+.fab-icon {
+    font-size: var(--font-size-2xl);
+    font-weight: 300;
+}
+
+/* Ripple effect */
+.fab::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.fab:active::before {
+    width: 100px;
+    height: 100px;
+}
+
+/* Hide on desktop */
+@media (min-width: 769px) {
+    .fab {
+        display: none;
+    }
+}
+
+/* Adjust position when bottom nav is hidden */
+@media (min-width: 769px) {
+    .fab {
+        bottom: var(--spacing-lg);
+    }
+}

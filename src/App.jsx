@@ -6,6 +6,7 @@ import { ExpenseProvider } from './context/ExpenseContext';
 import { BudgetProvider } from './context/BudgetContext';
 import { RecurringProvider } from './context/RecurringContext';
 import { GoalsProvider } from './context/GoalsContext';
+import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -199,7 +200,9 @@ function App() {
             <BudgetProvider>
               <RecurringProvider>
                 <GoalsProvider>
-                  <AppRoutes />
+                  <ToastProvider>
+                    <AppRoutes />
+                  </ToastProvider>
                 </GoalsProvider>
               </RecurringProvider>
             </BudgetProvider>
