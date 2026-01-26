@@ -27,3 +27,17 @@ dist-ssr
 /android/app/build
 /android/.gradle
 /ios/App/App/public
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+backend/.env
+
+# Virtual Environment
+venv/
+env/
+.venv/
