@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: import.meta.env.REACT_APP_API_URL || 'http://localhost:8000',
 });
 
 api.interceptors.request.use(
@@ -14,5 +14,15 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
+
+export const checkHealth = async () => {
+    try {
+        const response = await api.get('/health');
+        return response.data;
+    } catch (error) {
+        console.error('Health check failed:', error);
+        throw error;
+    }
+};
 
 export default api;

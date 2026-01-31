@@ -14,7 +14,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,6 +32,11 @@ app.include_router(categories.router, tags=["Categories"], prefix="/categories")
 @app.get("/")
 async def root():
     return {"message": "Welcome to Track Me API"}
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "Backend is running smoothly"}
 
 
 if __name__ == "__main__":
