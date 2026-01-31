@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
-from backend.database import recurring_collection
-from backend.models.recurring import RecurringSchema, CreateRecurringSchema
-from backend.routers.auth import get_current_user
+from database import recurring_collection
+from models.recurring import RecurringSchema, CreateRecurringSchema
+from routers.auth import get_current_user
 from typing import List
 from bson import ObjectId
 

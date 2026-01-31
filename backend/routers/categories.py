@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
-from backend.database import category_collection
-from backend.models.categories import CategorySchema, CreateCategorySchema
-from backend.routers.auth import get_current_user
+from database import category_collection
+from models.categories import CategorySchema, CreateCategorySchema
+from routers.auth import get_current_user
 from typing import List
 from bson import ObjectId
 

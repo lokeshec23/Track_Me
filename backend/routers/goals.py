@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
-from backend.database import goal_collection
-from backend.models.goals import GoalSchema, CreateGoalSchema
-from backend.routers.auth import get_current_user
+from database import goal_collection
+from models.goals import GoalSchema, CreateGoalSchema
+from routers.auth import get_current_user
 from typing import List
 from bson import ObjectId
 

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from backend.database import user_collection
-from backend.models.user import UserSchema, UserLoginSchema, Token, OnboardingSchema
+from database import user_collection
+from models.user import UserSchema, UserLoginSchema, Token, OnboardingSchema
 
-from backend.utils import get_password_hash, verify_password, create_access_token
+from utils import get_password_hash, verify_password, create_access_token
 from jose import jwt, JWTError
 
 router = APIRouter()
@@ -41,8 +41,8 @@ async def login(user: UserLoginSchema = Body(...)):
 
     }
 
-from backend.models.user import TokenData
-from backend.utils import SECRET_KEY, ALGORITHM
+from models.user import TokenData
+from utils import SECRET_KEY, ALGORITHM
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(

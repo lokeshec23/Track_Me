@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import auth, transactions, goals, budgets, recurring, categories
+from routers import auth, transactions, goals, budgets, recurring, categories
 
 
 
@@ -32,3 +32,8 @@ app.include_router(categories.router, tags=["Categories"], prefix="/categories")
 @app.get("/")
 async def root():
     return {"message": "Welcome to Track Me API"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

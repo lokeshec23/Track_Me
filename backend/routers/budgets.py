@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Depends
-from backend.database import budget_collection
-from backend.models.budgets import BudgetSchema, CreateBudgetSchema
-from backend.routers.auth import get_current_user
+from database import budget_collection
+from models.budgets import BudgetSchema, CreateBudgetSchema
+from routers.auth import get_current_user
 from typing import List
 from bson import ObjectId
 

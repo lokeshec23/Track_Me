@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body, HTTPException, Depends, Request
-from backend.database import transaction_collection
-from backend.models.transaction import TransactionSchema, CreateTransactionSchema
-from backend.routers.auth import get_current_user
+from database import transaction_collection
+from models.transaction import TransactionSchema, CreateTransactionSchema
+from routers.auth import get_current_user
 from typing import List
 from bson import ObjectId
 
